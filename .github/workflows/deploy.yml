@@ -20,7 +20,7 @@ jobs:
 
       - name: Deploy to Azure VM
         run: |
-          ssh azureuser@your-vm-ip << 'EOF'
+          ssh azureuser@20.55.27.218 << 'EOF'
             cd /var/www/app
             git pull origin main
             npm install  # or pip install -r requirements.txt
