@@ -4,37 +4,25 @@ on:
   push:
     branches:
       - main  # Runs the workflow when code is pushed to the main branch
-  pull_request:
-
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Install Dependencies
-        run: npm install  # Use 'pip install -r requirements.txt' for Python
-
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Run Tests
-        run: npm test  # Use pytest for Python
-
   deploy:
     runs-on: ubuntu-latest
-    needs: test
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Azure Login
-        run: az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H your-vm-ip >> ~/.ssh/known_hosts
 
-      - name: Deploy to Azure
-        run: az webapp deployment source config-zip --resource-group my-resource-group --name my-webapp --src-path ./deploy.zip
+      - name: Deploy to Azure VM
+        run: |
+          ssh azureuser@20.55.27.218 << 'EOF'
+            cd /var/www/app
+            git pull origin main
+            npm install  # or pip install -r requirements.txt
+            pm2 restart all  # Restart the application if using Node.js
+          EOF
