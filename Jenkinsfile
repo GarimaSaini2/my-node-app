@@ -48,9 +48,9 @@ pipeline {
             steps {
                 script {
                     if (isUnix()) {
-                        sh 'az webapp up --name my-node-app --resource-group myResourceGroup'
+                        sh 'az webapp up --name my-node-app --resource-group devops-assignment-rg'
                     } else {
-                        bat 'az webapp up --name my-node-app --resource-group myResourceGroup'
+                        bat 'az webapp up --name my-node-app --resource-group devops-assignment-rg'
                     }
                 }
             }
