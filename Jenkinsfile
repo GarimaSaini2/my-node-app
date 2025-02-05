@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        VM_IP = "20.55.27.218"  // Replace with your VM's public IP
-        VM_USER = "azureuser"   // Replace with your VM's username
-        APP_DIR = "/home/azureuser/my-node-app/new-my-node-app" // Path on the VM
+        VM_IP = credentials('AZURE_VM_IP')
+        VM_USER = credentials('AZURE_VM_USER')
+        APP_DIR = "/home/azureuser/my-node-app"
     }
 
     stages {
@@ -14,57 +14,39 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies on VM') {
+        stage('Install Dependencies') {
             steps {
                 script {
-                    sh """
-                    echo 'Installing dependencies on VM...'
-                    ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} '
-                        cd ${APP_DIR} &&
-                        npm install
-                    '
-                    """
+                    sh 'npm install'
                 }
             }
         }
 
-        stage('Build Application on VM') {
+        stage('Build Application') {
             steps {
                 script {
-                    sh """
-                    echo 'Building application on VM...'
-                    ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} '
-                        cd ${APP_DIR} &&
-                        npm run build
-                    '
-                    """
+                    sh 'npm run build'
                 }
             }
         }
 
-        stage('Run Tests on VM') {
+        stage('Run Tests') {
             steps {
                 script {
-                    sh """
-                    echo 'Running tests on VM...'
-                    ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} '
-                        cd ${APP_DIR} &&
-                        npm test
-                    '
-                    """
+                    sh 'npm test'
                 }
             }
         }
 
-        stage('Deploy to VM') {
+        stage('Deploy to Azure VM') {
             steps {
                 script {
                     sh """
-                    echo 'Deploying to VM...'
                     ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} '
                         cd ${APP_DIR} &&
                         git pull origin main &&
                         npm install &&
+                        npm run build &&
                         pm2 restart app || pm2 start app.js --name my-node-app
                     '
                     """
@@ -73,3 +55,4 @@ pipeline {
         }
     }
 }
+
