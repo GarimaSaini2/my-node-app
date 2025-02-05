@@ -1,32 +1,61 @@
 pipeline {
     agent any
-    environment {
-        SSH_CREDENTIALS_ID = 'ssh-key'  // Add SSH Key in Jenkins Credentials
-    }
+
     stages {
-        stage('Build') {
+        stage('Checkout Code') {
             steps {
-                sh 'npm install' // or pip install -r requirements.txt
+                checkout scm
             }
         }
-        stage('Test') {
+
+        stage('Install Dependencies') {
             steps {
-                sh 'npm test' // or pytest
+                script {
+                    if (isUnix()) {
+                        sh 'npm install'  // For Linux/macOS
+                    } else {
+                        bat 'npm install'  // For Windows (uses CMD)
+                    }
+                }
             }
         }
-        stage('Deploy') {
+
+        stage('Build Application') {
             steps {
-                sshagent(['ssh-key']) {
-                    sh '''
-                    ssh azureuser@20.55.27.218 << 'EOF'
-                    cd /var/www/app
-                    git pull origin main
-                    npm install
-                    pm2 restart all
-                    EOF
-                    '''
+                script {
+                    if (isUnix()) {
+                        sh 'npm run build'
+                    } else {
+                        bat 'npm run build'
+                    }
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh 'npm test'
+                    } else {
+                        bat 'npm test'
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Azure') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh 'az webapp up --name my-node-app --resource-group myResourceGroup'
+                    } else {
+                        bat 'az webapp up --name my-node-app --resource-group myResourceGroup'
+                    }
                 }
             }
         }
     }
 }
+
+    
