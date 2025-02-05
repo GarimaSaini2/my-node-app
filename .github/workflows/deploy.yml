@@ -1,29 +1,36 @@
-name: CI/CD Pipeline
+name: Deploy to Azure VM
 
 on:
   push:
     branches:
-      - main  # Runs when code is pushed to the main branch
+      - main  # Triggers when code is pushed to the 'main' branch
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name:  Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Setup SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H your-vm-ip >> ~/.ssh/known_hosts
+      - name:  Install Dependencies
+        run: npm install
 
-      - name: Deploy to Azure VM
-        run: |
-          ssh azureuser@20.55.27.218 << 'EOF'
-            cd /var/www/app
+      - name: 🏗Build Application
+        run: npm run build  # Ensure your package.json has a build script
+
+      - name:  Run Tests
+        run: npm test  # Ensure your tests are set up
+
+      - name:  Deploy to Azure VM
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.AZURE_VM_IP }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/${{ secrets.AZURE_VM_USER }}/my-node-app
             git pull origin main
-            npm install  # or pip install -r requirements.txt
-            pm2 restart all  # Restart the application if using Node.js
-          EOF
+            npm install
+            npm run build
+            pm2 restart app || pm2 start app.js --name my-node-app
