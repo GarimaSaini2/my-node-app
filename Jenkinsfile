@@ -1,12 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        VM_IP = "20.55.27.218" // Replace with your VM's public IP
-        VM_USER = "azureuser"       // Replace with your VM's username
-        APP_DIR = "/home/azureuser/my-node-app" // Path on the VM where your app resides
-    }
-
     stages {
         stage('Checkout Code') {
             steps {
@@ -17,7 +11,11 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    sh 'npm install' // Assumes Linux VM
+                    if (isUnix()) {
+                        sh 'npm install'  // For Linux/macOS
+                    } else {
+                        bat 'npm install'  // For Windows (uses CMD)
+                    }
                 }
             }
         }
@@ -25,7 +23,11 @@ pipeline {
         stage('Build Application') {
             steps {
                 script {
-                    sh 'npm run build'
+                    if (isUnix()) {
+                        sh 'npm run build'
+                    } else {
+                        bat 'npm run build'
+                    }
                 }
             }
         }
@@ -33,29 +35,28 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    sh 'npm test'
+                    if (isUnix()) {
+                        sh 'npm test'
+                    } else {
+                        bat 'npm test'
+                    }
                 }
             }
         }
 
-        stage('Deploy to VM') {
+        stage('Deploy to Azure') {
             steps {
                 script {
-                    sh """
-                    echo 'Deploying to VM...'
-                    ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} '
-                        cd ${APP_DIR} &&
-                        git pull origin main &&
-                        npm install &&
-                        pm2 restart app || pm2 start app.js --name my-node-app
-                    '
-                    """
+                    if (isUnix()) {
+                        sh 'az webapp up --name my-node-app-1 --resource-group devops-assignment-rg'
+                    } else {
+                        bat 'az webapp up --name my-node-app-1 --resource-group devops-assignment-rg'
+                    }
                 }
             }
         }
     }
 }
-
 
                 
     
