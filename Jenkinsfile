@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        VM_IP = "20.55.27.218" // Replace with your VM's public IP
+        VM_USER = "azureuser"       // Replace with your VM's username
+        APP_DIR = "/home/azureuser/my-node-app" // Path on the VM where your app resides
+    }
+
     stages {
         stage('Checkout Code') {
             steps {
@@ -11,11 +17,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    if (isUnix()) {
-                        sh 'npm install'  // For Linux/macOS
-                    } else {
-                        bat 'npm install'  // For Windows (uses CMD)
-                    }
+                    sh 'npm install' // Assumes Linux VM
                 }
             }
         }
@@ -23,11 +25,7 @@ pipeline {
         stage('Build Application') {
             steps {
                 script {
-                    if (isUnix()) {
-                        sh 'npm run build'
-                    } else {
-                        bat 'npm run build'
-                    }
+                    sh 'npm run build'
                 }
             }
         }
@@ -35,27 +33,29 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    if (isUnix()) {
-                        sh 'npm test'
-                    } else {
-                        bat 'npm test'
-                    }
+                    sh 'npm test'
                 }
             }
         }
 
-        stage('Deploy to Azure') {
+        stage('Deploy to VM') {
             steps {
                 script {
-                    if (isUnix()) {
-                        sh 'az webapp up --name my-node-app --resource-group devops-assignment-rg'
-                    } else {
-                        bat 'az webapp up --name my-node-app --resource-group devops-assignment-rg'
-                    }
+                    sh """
+                    echo 'Deploying to VM...'
+                    ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} '
+                        cd ${APP_DIR} &&
+                        git pull origin main &&
+                        npm install &&
+                        pm2 restart app || pm2 start app.js --name my-node-app
+                    '
+                    """
                 }
             }
         }
     }
 }
 
+
+                
     
