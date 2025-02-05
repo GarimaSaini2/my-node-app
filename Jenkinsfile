@@ -47,7 +47,7 @@ pipeline {
                         git pull origin main &&
                         npm install &&
                         npm run build &&
-                        pm2 restart app || pm2 start app.js --name my-node-app
+                        pm2 restart app || pm2 start server.js --name my-node-app
                     '
                     """
                 }
