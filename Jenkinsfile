@@ -53,23 +53,17 @@ pipeline {
             steps {
                 script {
                     sshagent(['azure-ssh-private-key']) {  // Use Jenkins SSH credentials
-                        if (isUnix()) {
-                            sh """
-                            echo 'Deploying to Azure VM...'
-                            ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} << EOF
-                                cd /home/azureuser/my-node-app
-                                git pull origin main
-                                npm install
-                                pm2 restart app || pm2 start server.js --name my-node-app
-                            EOF
-                            """
-                        } else {
-                            bat """
-                            echo Deploying to Azure VM...
-                            echo y | plink -ssh ${AZURE_VM_USER}@${AZURE_VM_IP} -batch -i "C:\\path\\to\\your\\private-key.ppk" ^
-                            "cd /home/azureuser/my-node-app && git pull origin main && npm install && pm2 restart app || pm2 start server.js --name my-node-app"
-                            """
-                        }
+                        sh 'echo "SSH Agent is working"'
+                        sh 'ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} "echo Connected successfully"'
+                        sh """
+                        echo 'Deploying to Azure VM...'
+                        ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} << EOF
+                            cd /home/azureuser/my-node-app
+                            git pull origin main
+                            npm install
+                            pm2 restart app || pm2 start server.js --name my-node-app
+                        EOF
+                        """
                     }
                 }
             }
