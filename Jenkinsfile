@@ -2,9 +2,8 @@ pipeline {
     agent any
 
     environment {
-        AZURE_VM_USER = 'azureuser'  // Replace with your Azure VM username
-        AZURE_VM_IP = '20.55.27.218' // Replace with your Azure VM IP
-        AZURE_SSH_PRIVATE_KEY = credentials('azure-ssh-private-key') // Add your SSH private key in Jenkins credentials
+        AZURE_VM_USER = 'azureuser'  // Azure VM username
+        AZURE_VM_IP = '20.55.27.218' // Azure VM IP
     }
 
     stages {
@@ -41,17 +40,19 @@ pipeline {
         stage('Deploy to VM') {
             steps {
                 script {
-                    sh """
-                    echo 'Deploying to VM...'
-                    ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} '
-                        cd /home/azureuser/my-node-app &&
-                        git pull origin main &&
-                        npm install &&
-                        pm2 restart app || pm2 start server.js --name my-node-app
-                    '
-                    """
+                    sshagent(['azure-ssh-private-key']) {  // Reference the SSH credential in Jenkins
+                        sh """
+                        echo 'Deploying to Azure VM...'
+                        ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} << EOF
+                            cd /home/azureuser/my-node-app
+                            git pull origin main
+                            npm install
+                            pm2 restart app || pm2 start server.js --name my-node-app
+                        EOF
+                        """
+                    }
                 }
             }
-        }
+        } 
     }
 }
