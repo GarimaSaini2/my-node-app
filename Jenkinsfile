@@ -52,9 +52,9 @@ pipeline {
         stage('Deploy to VM') {
             steps {
                 script {
-                    sshagent (credentials:(['SSH_KEY_ID']) {  // Use Jenkins SSH credentials
+                    sshagent (credentials: ['SSH_KEY_ID']) {  // Use Jenkins SSH credentials
                         sh 'echo "SSH Agent is working"'
-                       sh 'ssh -o StrictHostKeyChecking=no <AZURE_VM_USER>@<AZURE_VM_IP> "echo SSH Connection Successful"'
+                        sh "ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} 'echo SSH Connection Successful'"
                         sh """
                         echo 'Deploying to Azure VM...'
                         ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} << EOF
@@ -70,3 +70,4 @@ pipeline {
         }
     }
 }
+
