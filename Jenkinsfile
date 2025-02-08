@@ -53,7 +53,7 @@ pipeline {
         stage('Deploy to VM') {
             steps {
                 script {
-                    sshagent(credentials:['SSH_KEY_ID']) {  // Using SSH credentials
+                    sshagent(credentials:['azure-ssh-private-key']) {  // Using SSH credentials
                         // Ensure host key is automatically added and connections succeed
                         sh 'echo "SSH Agent is working"'
                         sh "ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} 'echo SSH Connection Successful'"
