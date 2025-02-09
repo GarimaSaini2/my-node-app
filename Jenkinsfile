@@ -53,7 +53,10 @@ pipeline {
    stage('Deploy to VM') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'SSH_KEY_ID', keyFileVariable: 'SSH_KEY')]) {  // Using SSH credentials
+                  withCredentials([sshUserPrivateKey(credentialsId: 'SSH_KEY_ID', keyFileVariable: 'SSH_KEY')]) {
+    sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY -o StrictHostKeyChecking=no" git pull origin main'
+}
+  // Using SSH credentials
                         // Ensure host key is automatically added and connections succeed
                         sh 'echo "SSH Agent is working"'
                         sh "ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} 'echo SSH Connection Successful'"
