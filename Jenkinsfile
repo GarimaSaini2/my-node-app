@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-        AZURE_VM_USER = 'azureuser'
-        AZURE_VM_IP = '20.55.27.218'
+        AZURE_VM_USER = 'azureuser'  // Azure VM username
+        AZURE_VM_IP = '20.55.27.218' // Azure VM IP
+        SSH_KEY_ID = 'azure-ssh-private-key'  // ID for Jenkins SSH key credentials
     }
 
     stages {
@@ -48,29 +49,38 @@ pipeline {
                 }
             }
         }
+        
+    stage('Deploy to VM') {
+    steps {
+        script {
+            sshagent(credentials: ['SSH_KEY_ID']) { // Ensure correct credential ID
+                // Verify SSH agent is running
+                sh 'echo "SSH Agent is working"'
+                
+                // Test SSH Connection before proceeding
+                sh "ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} 'echo SSH Connection Successful' || exit 1"
 
-        stage('Deploy to VM') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'SSH_KEY_ID', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                            echo "Checking if SSH key exists..."
-                            ls -l "$SSH_KEY"
+                // Deploy application
+                sh """
+                echo 'Deploying to Azure VM...'
+                ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} << 'EOF'
+                    echo "Navigating to app directory..."
+                    cd /home/azureuser/my-node-app || { echo "Failed to navigate"; }
+                    
+                    echo "Pulling latest code..."
+                    git pull origin main || { echo "Git pull failed"; }
+                    
+                    echo "Installing dependencies..."
+                    npm install || { echo "npm install failed"; }
+                    
+                    echo "Restarting application with PM2..."
+                    pm2 restart app || pm2 start server.js --name my-node-app || { echo "PM2 restart/start failed"; }
 
-                            echo "Attempting SSH connection..."
-                            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$AZURE_VM_USER@$AZURE_VM_IP" "echo SSH Connection Successful"
-
-                            echo "Deploying to Azure VM..."
-                            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$AZURE_VM_USER@$AZURE_VM_IP" << 'EOF'
-                                cd /home/azureuser/my-node-app
-                                git pull origin main
-                                npm install
-                                pm2 restart app || pm2 start server.js --name my-node-app
-                            EOF
-                        '''
-                    }
-                }
+                    echo "Deployment complete!"
+                EOF
+                """
             }
         }
     }
 }
+
