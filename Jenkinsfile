@@ -49,24 +49,22 @@ pipeline {
                 }
             }
         }
-        
-   stage('Deploy to VM') {
+
+        stage('Deploy to VM') {
             steps {
                 script {
-                  withCredentials([sshUserPrivateKey(credentialsId: 'SSH_KEY_ID', keyFileVariable: 'SSH_KEY')]) {
-    sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY -o StrictHostKeyChecking=no" git pull origin main'
-}
-  // Using SSH credentials
-                        // Ensure host key is automatically added and connections succeed
+                    withCredentials([sshUserPrivateKey(credentialsId: SSH_KEY_ID, keyFileVariable: 'SSH_KEY')]) {
                         sh 'echo "SSH Agent is working"'
-                        sh "ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} 'echo SSH Connection Successful'"
+                        sh "ssh -i $SSH_KEY -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} 'echo SSH Connection Successful'"
+
+                        // Ensure Git pull runs inside VM
                         sh """
                         echo 'Deploying to Azure VM...'
-                        ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} << 'EOF'
-                            cd /home/azureuser/my-node-app 
-                            git pull origin main 
-                            npm install 
-                            pm2 restart app || pm2 start server.js --name my-node-app 
+                        ssh -i $SSH_KEY -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} << 'EOF'
+                            cd /home/azureuser/my-node-app
+                            GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" git pull origin main
+                            npm install
+                            pm2 restart app || pm2 start server.js --name my-node-app
                         EOF
                         """
                     }
@@ -75,5 +73,3 @@ pipeline {
         }
     }
 }
-
-
