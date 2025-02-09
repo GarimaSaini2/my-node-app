@@ -53,17 +53,17 @@ pipeline {
    stage('Deploy to VM') {
             steps {
                 script {
-                    sshagent(credentials:['SSH_KEY_ID']) {  // Using SSH credentials
+                    withCredentials([sshUserPrivateKey(credentialsId: 'SSH_KEY_ID', keyFileVariable: 'SSH_KEY')]) {  // Using SSH credentials
                         // Ensure host key is automatically added and connections succeed
                         sh 'echo "SSH Agent is working"'
                         sh "ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} 'echo SSH Connection Successful'"
                         sh """
                         echo 'Deploying to Azure VM...'
                         ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} << 'EOF'
-                            cd /home/azureuser/my-node-app || exit 1
-                            git pull origin main || exit 1
-                            npm install || exit 1
-                            pm2 restart app || pm2 start server.js --name my-node-app || exit 1
+                            cd /home/azureuser/my-node-app 
+                            git pull origin main 
+                            npm install 
+                            pm2 restart app || pm2 start server.js --name my-node-app 
                         EOF
                         """
                     }
