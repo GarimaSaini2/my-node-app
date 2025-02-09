@@ -4,7 +4,7 @@ pipeline {
     environment {
         AZURE_VM_USER = 'azureuser'  // Azure VM username
         AZURE_VM_IP = '20.55.27.218' // Azure VM IP
-        SSH_KEY_ID = 'azure-ssh-private-key'  // Correct Jenkins SSH key credentials ID
+        //SSH_KEY_ID = 'azure-ssh-private-key'  // Correct Jenkins SSH key credentials ID
     }
 
     stages {
