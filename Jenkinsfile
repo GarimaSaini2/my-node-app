@@ -52,7 +52,7 @@ pipeline {
         stage('Deploy to VM') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'azure-ssh-private-key', keyFileVariable: 'SSH_KEY')]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'SSH_KEY_ID', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                             echo "Checking if SSH key exists..."
                             ls -l "$SSH_KEY"
