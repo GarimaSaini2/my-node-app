@@ -50,37 +50,27 @@ pipeline {
             }
         }
         
-    stage('Deploy to VM') {
-    steps {
-        script {
-            sshagent(credentials: ['SSH_KEY_ID']) { // Ensure correct credential ID
-                // Verify SSH agent is running
-                sh 'echo "SSH Agent is working"'
-                
-                // Test SSH Connection before proceeding
-                sh "ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} 'echo SSH Connection Successful' || exit 1"
-
-                // Deploy application
-                sh """
-                echo 'Deploying to Azure VM...'
-                ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} << 'EOF'
-                    echo "Navigating to app directory..."
-                    cd /home/azureuser/my-node-app || { echo "Failed to navigate"; }
-                    
-                    echo "Pulling latest code..."
-                    git pull origin main || { echo "Git pull failed"; }
-                    
-                    echo "Installing dependencies..."
-                    npm install || { echo "npm install failed"; }
-                    
-                    echo "Restarting application with PM2..."
-                    pm2 restart app || pm2 start server.js --name my-node-app || { echo "PM2 restart/start failed"; }
-
-                    echo "Deployment complete!"
-                EOF
-                """
+   stage('Deploy to VM') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'SSH_KEY_ID', keyFileVariable: 'SSH_KEY')]) {  // Using SSH credentials
+                        // Ensure host key is automatically added and connections succeed
+                        sh 'echo "SSH Agent is working"'
+                        sh "ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} 'echo SSH Connection Successful'"
+                        sh """
+                        echo 'Deploying to Azure VM...'
+                        ssh -o StrictHostKeyChecking=no ${AZURE_VM_USER}@${AZURE_VM_IP} << 'EOF'
+                            cd /home/azureuser/my-node-app 
+                            git pull origin main 
+                            npm install 
+                            pm2 restart app || pm2 start server.js --name my-node-app 
+                        EOF
+                        """
+                    }
+                }
             }
         }
     }
 }
+
 
