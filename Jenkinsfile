@@ -4,7 +4,7 @@ pipeline {
     environment {
         AZURE_VM_USER = 'azureuser'  // Azure VM username
         AZURE_VM_IP = '20.55.27.218' // Azure VM IP
-        //SSH_KEY_ID = 'azure-ssh-private-key'  // Correct Jenkins SSH key credentials ID
+        SSH_KEY_ID = 'azure-ssh-private-key'  // Correct Jenkins SSH key credentials ID
     }
 
     stages {
@@ -53,7 +53,7 @@ pipeline {
         stage('Deploy to VM') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: SSH_KEY_ID, keyFileVariable: 'SSH_KEY')]) {  // Fix here
+                    withCredentials([sshUserPrivateKey(credentialsId: 'SSH_KEY_ID', keyFileVariable: 'SSH_KEY')]) {  // Fix here
                         // Debugging to check if the SSH key is recognized
                         sh 'echo "SSH Agent is working"'
                         
